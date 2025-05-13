@@ -1,0 +1,36 @@
+services:
+  # Control Node (Ansible Controller)
+  control-node:
+    image: ansible-control-node:latest  # Use the pre-built image
+    container_name: DM-control-node
+    networks:
+      - ansible-network
+    volumes:
+      - ./setup.sh:/setup.sh  # Mount the setup script for initializing the control node
+    command: bash -c "chmod +x /setup.sh && /setup.sh && tail -f /dev/null"  # Run the setup script to configure the control node
+    privileged: true  # Allow SSH service inside the container (can be removed if not needed)
+
+  # Managed Node 1 (Ansible Managed Node)
+  managed-node-1:
+    image: ansible-managed-node-1:latest  # Use the pre-built image
+    container_name: DM-managed-node-1
+    networks:
+      - ansible-network
+    environment:
+      - NODE_NAME=managed-node-1  # Use a variable to define node name
+    privileged: true  # Allow SSH service inside the container (can be removed if not needed)
+
+  # Managed Node 2 (Ansible Managed Node)
+  managed-node-2:
+    image: ansible-managed-node-2:latest  # Use the pre-built image
+    container_name: DM-managed-node-2
+    networks:
+      - ansible-network
+    environment:
+      - NODE_NAME=managed-node-2  # Use a variable to define node name
+    privileged: true  # Allow SSH service inside the container (can be removed if not needed)
+
+# Define the network for container communication
+networks:
+  ansible-network:
+    driver: bridge

@@ -1,0 +1,203 @@
+Note: these schemas need to be created through mongosh 
+// .js ones are version of creating schemas through node.js , and second ones are the the way we create it through mongosh
+// first ones are for better understanding only use the second ones
+
+
+// Tool.js
+const mongoose = require('mongoose');
+
+const toolSchema = new mongoose.Schema({
+  name: { 
+    type: String, 
+    required: true, 
+    unique: true 
+  },
+  description: { 
+    type: String, 
+    required: true 
+  }
+});
+
+const Tool = mongoose.model('Tool', toolSchema);
+
+module.exports = Tool;
+
+
+// lab.js
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
+
+const labSchema = new mongoose.Schema({
+  tool_name: { 
+    type: String, 
+    ref: 'Tool',  // Reference to the Tool model by name
+    required: true 
+  },  
+  name: { 
+    type: String, 
+    required: true, 
+    unique: true 
+  },                   // Unique lab name
+  description: { 
+    type: String, 
+    required: true 
+  },
+  docker_image: { 
+    type: String, 
+    required: true 
+  }
+});
+
+const Lab = mongoose.model('Lab', labSchema);
+
+module.exports = Lab;
+
+// labquestion.js
+
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
+
+const labQuestionsSchema = new mongoose.Schema({
+  lab_name: { 
+    type: String, 
+    required: true, 
+    ref: 'Lab'  // Reference to Lab name
+  },   
+  questions_data: [
+    {
+      question_number: { 
+        type: Number, 
+        required: true 
+      },
+      question: { 
+        type: String, 
+        required: true 
+      },
+      script: { 
+        type: String, 
+        required: true 
+      },
+      hints: { 
+        type: [String], 
+        default: []  // Array of hints (strings)
+      }
+    }
+  ]
+});
+
+const LabQuestion = mongoose.model('LabQuestion', labQuestionsSchema);
+
+module.exports = LabQuestion;
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+enter these into command line of mongosh to create schemas
+//tools
+
+db.createCollection("tools", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["name", "description"],
+      properties: {
+        name: {
+          bsonType: "string",
+          description: "Tool name must be a string and unique"
+        },
+        description: {
+          bsonType: "string",
+          description: "Tool description must be a string"
+        }
+      }
+    }
+  },
+  validationLevel: "strict",
+  validationAction: "error"
+});
+
+// Ensure unique constraint on `name`
+db.tools.createIndex({ name: 1 }, { unique: true });
+
+//labS
+
+db.createCollection("labs", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["tool_id", "name", "description", "docker_image"],
+      properties: {
+        tool_id: {
+          bsonType: "objectId", // Reference to the Tool document's ID
+          description: "Tool ID must be a valid ObjectId"
+        },
+        name: {
+          bsonType: "string",
+          description: "Lab name must be a string and unique"
+        },
+        description: {
+          bsonType: "string",
+          description: "Lab description must be a string"
+        },
+        docker_image: {
+          bsonType: "string",
+          description: "Docker image must be a string"
+        }
+      }
+    }
+  },
+  validationLevel: "strict",
+  validationAction: "error"
+});
+
+// Ensure unique constraint on `name`
+db.labs.createIndex({ name: 1 }, { unique: true });
+
+
+// labquestion
+
+db.createCollection("lab_questions", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["lab_name", "questions_data"],
+      properties: {
+        lab_name: {
+          bsonType: "string",
+          description: "Lab name must be a string and must match an existing Lab"
+        },
+        questions_data: {
+          bsonType: "array",
+          description: "Questions data must be an array of question objects",
+          items: {
+            bsonType: "object",
+            required: ["question_number", "question", "script"],
+            properties: {
+              question_number: {
+                bsonType: "int",
+                description: "Question number must be an integer"
+              },
+              question: {
+                bsonType: "string",
+                description: "Question must be a string"
+              },
+              script: {
+                bsonType: "string",
+                description: "Script must be a string"
+              },
+              hints: {
+                bsonType: "array",
+                description: "Hints must be an array of strings",
+                items: {
+                  bsonType: "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  validationLevel: "strict",
+  validationAction: "error"
+});
