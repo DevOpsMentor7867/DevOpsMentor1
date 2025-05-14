@@ -1,10 +1,12 @@
 import axios from 'axios';
 import { useAuthContext } from '../Context/AuthContext';
 
-const BASE_URL = 'http://localhost:8000/api';
+const BASE_URL = 'http://35.207.202.119:8000/api';
+
 
 export const useChatAPI = () => {
   const { token } = useAuthContext();
+  console.log('Token:', token);
 
   const api = axios.create({
     baseURL: BASE_URL,

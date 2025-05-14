@@ -329,6 +329,7 @@ const DashboardOverview = () => {
   ]
 
   // Function to get color based on tool name
+  // eslint-disable-next-line
   const getToolColor = (toolName, opacity = 1) => {
     const colorMap = {
       Docker: `rgba(9, 209, 199, ${opacity})`,
@@ -619,7 +620,9 @@ const DashboardOverview = () => {
                 {toolsProgressData.map((tool, index) => (
                   <div
                     key={tool.name}
-                    className={`${getThemeColor(index).bgLight} backdrop-blur-sm rounded-xl p-4 border ${getThemeColor(index).border} transition-all duration-300 hover:scale-[1.02] hover:shadow-md`}
+                    className={`${getThemeColor(index).bgLight} backdrop-blur-sm rounded-xl p-4 border ${
+                      getThemeColor(index).border
+                    } transition-all duration-300 hover:scale-[1.02] hover:shadow-md`}
                   >
                     <div className="flex justify-between items-center mb-2">
                       <h3 className="font-semibold text-white">{tool.name}</h3>
@@ -789,7 +792,10 @@ const DashboardOverview = () => {
               <div className="bg-[#80EE98]/10 rounded-lg p-3 border border-[#80EE98]/20">
                 <p className="text-[#80EE98] font-medium">
                   Average Attempts:{" "}
-                  {(selectedLabData?.attemptStats?.averageAttempts || data.attemptStats.averageAttempts).toFixed(2)}
+                  {typeof (selectedLabData?.attemptStats?.averageAttempts || data.attemptStats.averageAttempts) ===
+                  "number"
+                    ? (selectedLabData?.attemptStats?.averageAttempts || data.attemptStats.averageAttempts).toFixed(2)
+                    : "0.00"}
                 </p>
               </div>
               <div className="bg-[#09D1C7]/10 rounded-lg p-3 border border-[#09D1C7]/20">

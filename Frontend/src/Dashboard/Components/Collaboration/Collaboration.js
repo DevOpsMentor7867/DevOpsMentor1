@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect, useRef } from "react"
 import { useAuthContext } from "../../../API/UseAuthContext"
 import { useSocket } from "../../../Context/SocketContext"
@@ -8,8 +6,22 @@ const Chat = ({ onClose }) => {
   const [messageInput, setMessageInput] = useState("")
   const [activeChat, setActiveChat] = useState(null)
   const { user } = useAuthContext()
-  const { onlineUsers, messages, sendMessage } = useSocket()
+  const { onlineUsers, messages, sendMessage, isConnected } = useSocket()
   const messagesEndRef = useRef(null)
+
+  // Add additional debug logging to help troubleshoot issues
+
+  // Add this at the top of the component, after the hooks
+  useEffect(() => {
+    // Debug logging for socket connection
+    console.log("Socket connection status:", isConnected ? "Connected" : "Disconnected")
+    console.log("Current user:", user)
+    console.log("Online users count:", onlineUsers.length)
+
+    if (onlineUsers.length === 0) {
+      console.log("No online users detected. Check if 'register' event was sent properly.")
+    }
+  }, [isConnected, user, onlineUsers.length])
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -20,18 +32,29 @@ const Chat = ({ onClose }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
+  // Update the message sending function to include more logging
   const handleSendMessage = (e) => {
     e.preventDefault()
 
-    if (!messageInput.trim() || !activeChat) return
+    if (!messageInput.trim() || !activeChat) {
+      console.log("Cannot send message: empty message or no active chat")
+      return
+    }
+
+    console.log("Attempting to send message to:", activeChat.username, "socketId:", activeChat.socketId)
 
     // Send message using the context function
-    sendMessage({
+    const success = sendMessage({
       toSocketId: activeChat.socketId,
       message: messageInput,
     })
 
-    setMessageInput("")
+    if (success) {
+      console.log("Message sent successfully")
+      setMessageInput("")
+    } else {
+      console.error("Failed to send message")
+    }
   }
 
   const selectChat = (user) => {
@@ -76,6 +99,13 @@ const Chat = ({ onClose }) => {
     }
   }
 
+  // Debug logging for troubleshooting
+  useEffect(() => {
+    console.log("Current online users:", onlineUsers)
+    console.log("Current messages:", messages)
+    console.log("Active chat:", activeChat)
+  }, [onlineUsers, messages, activeChat])
+
   return (
     <div className="z-50 backdrop-blur-sm fixed inset-0 bg-black/50 flex items-center justify-center">
       <div className="bg-[#1A202C] rounded-lg p-6 w-[1000px] h-[600px] flex overflow-hidden">
@@ -89,32 +119,32 @@ const Chat = ({ onClose }) => {
           </div>
 
           <div className="space-y-2">
-            {onlineUsers.map((user, index) => (
-              <div
-                key={user.socketId}
-                onClick={() => selectChat(user)}
-                className={`
-                  p-3 rounded-lg cursor-pointer transition-colors flex items-center
-                  ${activeChat?.socketId === user.socketId ? getThemeColor(index).bgLight : "hover:bg-white/5"}
-                  ${getThemeColor(index).border}
-                `}
-              >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getThemeColor(index).bg}`}>
-                  <span className={`text-md ${index % 3 === 0 || index % 3 === 1 ? "text-black" : "text-black"}`}>
-                    {user.username[0].toUpperCase()}
-                  </span>
+            {onlineUsers.length > 0 ? (
+              onlineUsers.map((user, index) => (
+                <div
+                  key={user.socketId}
+                  onClick={() => selectChat(user)}
+                  className={`
+                    p-3 rounded-lg cursor-pointer transition-colors flex items-center
+                    ${activeChat?.socketId === user.socketId ? getThemeColor(index).bgLight : "hover:bg-white/5"}
+                    ${getThemeColor(index).border}
+                  `}
+                >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getThemeColor(index).bg}`}>
+                    <span className={`text-md ${index % 3 === 0 || index % 3 === 1 ? "text-black" : "text-black"}`}>
+                      {user.username[0].toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className={`font-medium ${getThemeColor(index).primary}`}>{user.username}</h3>
+                    <p className="text-white/60 text-xs">Online</p>
+                  </div>
+                  <div className="ml-auto">
+                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                  </div>
                 </div>
-                <div className="ml-3">
-                  <h3 className={`font-medium ${getThemeColor(index).primary}`}>{user.username}</h3>
-                  <p className="text-white/60 text-xs">Online</p>
-                </div>
-                <div className="ml-auto">
-                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                </div>
-              </div>
-            ))}
-
-            {onlineUsers.length === 0 && (
+              ))
+            ) : (
               <div className="text-center py-4 text-white/60">No users online at the moment</div>
             )}
           </div>

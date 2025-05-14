@@ -57,61 +57,105 @@ const UserProfile = () => {
   };
 
   const toggleEdit = async () => {
-    if (isEditing) {
-      try {
-        const response = await api.post("/user/SetUserInformation", {
+  if (isEditing) {
+    try {
+      // Retrieve token from localStorage
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setApiMessage({
+          type: "error",
+          content: "No authentication token found. Please log in again.",
+        });
+        return;
+      }
+
+      // Send the token along with the request in the Authorization header
+      const response = await api.post(
+        "/user/SetUserInformation",
+        {
           email: user2.email,
           name: user2.name,
           username: user2.username,
           gender: user2.gender,
-        });
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,  // Attach token to the headers
+          },
+        }
+      );
 
-        console.log("API Response:", response.data);
+      console.log("API Response:", response.data);
 
-        setApiMessage({
-          type: "success",
-          content: "Profile saved successfully!",
-        });
+      setApiMessage({
+        type: "success",
+        content: "Profile saved successfully!",
+      });
 
-        // Update the user state with the response data
-        setUser((prevUser) => ({
-          ...prevUser,
-          ...response.data,
-        }));
-      } catch (error) {
-        console.error("API Error:", error);
-        setApiMessage({
-          type: "error",
-          content: "Failed to save profile. Please try again.",
-        });
-      }
-    } else {
-      // Clear the API message when entering edit mode
-      setApiMessage({ type: "", content: "" });
+      // Update the user state with the response data
+      setUser((prevUser) => ({
+        ...prevUser,
+        ...response.data,
+      }));
+    } catch (error) {
+      console.error("API Error:", error);
+      setApiMessage({
+        type: "error",
+        content: "Failed to save profile. Please try again.",
+      });
     }
-    setIsEditing(!isEditing);
-  };
+  } else {
+    // Clear the API message when entering edit mode
+    setApiMessage({ type: "", content: "" });
+  }
+  setIsEditing(!isEditing);
+};
 
 
   const handleDeleteAccount = async (email, password) => {
-    try {
-      const response = await api.post("/user/delete-user", { email, password });
-      setApiMessage({
-        type: "success",
-        content: response.data.message || "Account deleted successfully.",
-      });    
-       
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
+  try {
+    // Retrieve token from localStorage
+    const token = localStorage.getItem("token");
 
-    } catch (error) {
+    if (!token) {
       setApiMessage({
         type: "error",
-        content: error.response?.data?.message || "Failed to delete account. Please try again.",
+        content: "No authentication token found. Please log in again.",
       });
+      return;
     }
-  };
+
+    // Send the token along with the request in the Authorization header
+    const response = await api.post(
+      "/user/delete-user", 
+      { email, password },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`, // Attach token to the headers
+        },
+      }
+    );
+
+    setApiMessage({
+      type: "success",
+      content: response.data.message || "Account deleted successfully.",
+    });
+
+    // Redirect to login page after 3 seconds
+    setTimeout(() => {
+      navigate('/login');
+    }, 3000);
+
+  } catch (error) {
+    console.error("API Error:", error);
+    setApiMessage({
+      type: "error",
+      content: error.response?.data?.message || "Failed to delete account. Please try again.",
+    });
+  }
+};
+
 
   if (!isLoaded) {
     return <LoadingPage />;
