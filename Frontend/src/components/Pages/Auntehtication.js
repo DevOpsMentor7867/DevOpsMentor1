@@ -278,10 +278,10 @@ export default function AuthComponent() {
                 <div className="w-full border-t border-gray-600"></div>
               </div>
               <div className=" flex justify-center ">
-                <span className="text-white text-lg">or </span>
+                {/* <span className="text-white text-lg">or </span> */}
               </div>
             </div>
-            <Button
+            {/* <Button
               type="button"
               onClick={handleGoogleSignIn}
               className="w-full bg-white hover:bg-gray-100 text-gray-900 flex items-center justify-center gap-2 transition-colors"
@@ -305,7 +305,7 @@ export default function AuthComponent() {
                 />
               </svg>
               Sign in with Google
-            </Button>
+            </Button> */}
           </>
         );
       case "signup":
@@ -411,10 +411,10 @@ export default function AuthComponent() {
                 <div className="w-full border-t border-gray-600"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="text-white text-lg">or </span>
+                {/* <span className="text-white text-lg">or </span> */}
               </div>
             </div>
-            <Button
+            {/* <Button
               type="button"
               onClick={handleGoogleSignIn}
               className="w-full bg-white hover:bg-gray-100 text-gray-900 flex items-center justify-center gap-2 transition-colors"
@@ -438,7 +438,7 @@ export default function AuthComponent() {
                 />
               </svg>
               Sign up with Google
-            </Button>
+            </Button> */}
           </>
         );
       default:

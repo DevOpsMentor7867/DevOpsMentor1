@@ -6,7 +6,7 @@ import TerminalQuiz from "./Components/Terminal";
 import UserProfile from "./Components/userProfile";
 import ToolData from "./Components/ToolsPage";
 import Labs from "./Components/LabsPage";
-import Collaboration from "./Components/Collaboration/Collaboration";
+import ChatComponent from "./Components/Collaboration/ChatComponent";
 import HomePage from "./Components/HomePage";
 import Pricing from "./Components/Pricing/pricing";
 import CheckoutPage from "./Components/Pricing/CheckoutPage";
@@ -35,7 +35,7 @@ export default function DashboardLayout() {
           <Route path="/labs/:labId/questions" element={<TerminalQuiz isOpen={isSidebarOpen} />} />
           <Route path="/profile" element={<UserProfile />} />
           <Route path="/pricing" element= {<Pricing/>} />
-          <Route path="/collaboration" element={<Collaboration />} />
+          <Route path="/collaboration" element={<ChatComponent />} />
           <Route path="/checkout" element={<CheckoutPage />} />
         </Routes>
       </main>

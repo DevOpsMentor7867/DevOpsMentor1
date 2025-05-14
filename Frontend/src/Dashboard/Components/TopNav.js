@@ -59,15 +59,13 @@ export default function TopNav({ isSidebarOpen }) {
 
   return (
     <nav
-    // bg-[#1A202C]
+      // bg-[#1A202C]
       className={`fixed top-0 right-0 z-50 flex items-center justify-between px-4 py-4 transition-all duration-300 bottom-gradient-border w-full  bg-gray-950 ${
         isSidebarOpen ? "left-60" : "md:left-14"
       }`}
     >
-      <div className="flex-1 text-center">
-        <span className="text-btg z-10 text-2xl md:text-2xl ml-8 md:ml-16 font-semibold uppercase ">
-          DEV∞OPS Mentor
-        </span>
+      <div className="flex items-center justify-center w-full">
+        <img src="./lg.png" className="h-8 scale-150" alt="Logo" />
       </div>
 
       <div
@@ -104,7 +102,7 @@ export default function TopNav({ isSidebarOpen }) {
                 <div className="flex items-center gap-3">
                   <div>
                     <div className="font-medium text-2xl text-btg">
-                    {user ? user.name : "Dummy Name"}
+                      {user ? user.name : "Dummy Name"}
                     </div>
                     <div className="text-sm text-white mt-1">
                       {user ? user.email : "dummyemail@example.com"}

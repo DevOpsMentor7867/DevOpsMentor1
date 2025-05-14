@@ -1,30 +1,41 @@
-import "./App.css";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Home from "./components/Pages/Home";
-import LogIn from "./components/Pages/Auntehtication";
-import { useAuthContext } from "./API/UseAuthContext";
-import Dashboard from "./Dashboard/Dashboard";
-import ResetPasswordComponent from "./components/Pages/ResetPasswordPage";
-import LoadingAnimation from "./Dashboard/Components/LoadingPage";
+import "./App.css"
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
+import Home from "./components/Pages/Home"
+import LogIn from "./components/Pages/Auntehtication"
+import { useAuthContext } from "./API/UseAuthContext"
+import Dashboard from "./Dashboard/Dashboard"
+import ResetPasswordComponent from "./components/Pages/ResetPasswordPage"
+import LoadingAnimation from "./Dashboard/Components/LoadingPage"
+import { SocketProvider } from "../src/Context/SocketContext"
 
 function App() {
-  const { user, loading } = useAuthContext();
+  const { user, loading } = useAuthContext()
+
   if (loading) {
-    return <LoadingAnimation />;
+    return <LoadingAnimation />
   }
+
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<LogIn />} />
-        <Route path="/dashboard/*" element={user ? <Dashboard /> : <LogIn />} />
         <Route
-          path={`/reset-password/:token`}
-          element={<ResetPasswordComponent />}
+          path="/dashboard/*"
+          element={
+            user ? (
+              <SocketProvider>
+                <Dashboard />
+              </SocketProvider>
+            ) : (
+              <LogIn />
+            )
+          }
         />
+        <Route path={`/reset-password/:token`} element={<ResetPasswordComponent />} />
       </Routes>
     </Router>
-  );
+  )
 }
 
-export default App;
+export default App

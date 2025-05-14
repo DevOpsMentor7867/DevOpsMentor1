@@ -19,10 +19,12 @@ export const LoginUser = () => {
       const response = await api.post("/user/login", { email, password });
       if (response.status >= 200 && response.status < 300) {
         // eslint-disable-next-line
-        // const {token} = response.token;
-        console.log(response)
+        const token = response.data.token;
+        console.log("RESPONSE",response)
+        const user = response.data.user;
+        console.log(user, token);
 
-        dispatch({ type: "LOGIN", payload: response.data.user });
+        dispatch({ type: "LOGIN", payload: {user, token}});
         navigate("/Dashboard");
       } else {
         setError(response.data.message || "An error occurred during login.");
