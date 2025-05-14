@@ -36,7 +36,7 @@ export default function Sidebar({ isOpen, onToggle }) {
         <Beaker className="h-5 w-5 text-[#80EE98] hover:text-white hover:bg-[#80EE98]/20 transition-transform duration-300 ease-in-out hover:scale-110" />
       ),
       label: "Loading",
-      to: "/dashboard/loading",
+      to: "/dashboard/collaboration",
       className: "",
     },
     {

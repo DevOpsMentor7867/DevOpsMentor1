@@ -1,159 +1,339 @@
-import React from 'react';
-const dummyUsers = [
-  {
-    id: 1,
-    name: "Alex Morgan",
-    expertise: "Full Stack Developer",
-    progress: 85,
-    location: "San Francisco, CA",
-    skills: ["React", "Node.js", "MongoDB"]
-  },
-  {
-    id: 2,
-    name: "Sarah Chen",
-    expertise: "UI/UX Designer",
-    progress: 92,
-    location: "Toronto, ON",
-    skills: ["Figma", "Adobe XD", "Prototyping"]
-  },
-  {
-    id: 3,
-    name: "Marcus Kim",
-    expertise: "DevOps Engineer",
-    progress: 78,
-    location: "Seoul, SK",
-    skills: ["Docker", "Kubernetes", "AWS"]
-  },
-  {
-    id: 4,
-    name: "Marcus Kim",
-    expertise: "DevOps Engineer",
-    progress: 78,
-    location: "Seoul, SK",
-    skills: ["Docker", "Kubernetes", "AWS"]
-  },
-  {
-    id: 5,
-    name: "Marcus Kim",
-    expertise: "DevOps Engineer",
-    progress: 78,
-    location: "Seoul, SK",
-    skills: ["Docker", "Kubernetes", "AWS"]
-  },
-  
-];
+import { useState, useEffect, useRef } from "react";
+import { io } from "socket.io-client";
+import { useAuthContext } from "../../../API/UseAuthContext";
 
+const Chat = ({ onClose }) => {
+  const [messages, setMessages] = useState({});
+  const [messageInput, setMessageInput] = useState("");
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [activeChat, setActiveChat] = useState(null);
+  const { user } = useAuthContext();
+  const messagesEndRef = useRef(null);
+  const socketRef = useRef(null);
 
+  // Connect to socket on component mount
+  useEffect(() => {
+    // Connect to your backend socket server with the chat namespace
+    socketRef.current = io(process.env.REACT_APP_CHATTING_SOCKET_URL, {
+      withCredentials: true,
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
 
-function Collaboration({ isOpen, onClose }) {
-  if (!isOpen) return null;
-  
-  const handleInvite = (userId) => {
-    console.log(`Invited user ${userId} to collaborate`);
+    // Register the current user
+    socketRef.current.emit("register", user.username);
+
+    // Listen for online users updates
+    socketRef.current.on("onlineUsers", (users) => {
+      // Filter out current user from the list
+      const filteredUsers = users.filter(
+        (user22) => user22.username !== user.username
+      );
+      setOnlineUsers(filteredUsers);
+    });
+
+    // Listen for incoming messages
+    socketRef.current.on("receiveMessage", ({ message, from }) => {
+      setMessages((prevMessages) => {
+        const newMessages = { ...prevMessages };
+        if (!newMessages[from]) {
+          newMessages[from] = [];
+        }
+        newMessages[from].push({
+          text: message,
+          sender: from,
+          timestamp: new Date().toISOString(),
+        });
+        return newMessages;
+      });
+    });
+
+    // Clean up on unmount
+    return () => {
+      socketRef.current.disconnect();
+    };
+  }, [user]);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, activeChat]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+
+    if (!messageInput.trim() || !activeChat) return;
+
+    const newMessage = {
+      text: messageInput,
+      sender: user.username,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Emit message to server
+    socketRef.current.emit("sendMessage", {
+      toSocketId: activeChat.socketId,
+      message: messageInput,
+      from: user.username,
+    });
+
+    // Optimistically add to UI
+    setMessages((prevMessages) => {
+      const newMessages = { ...prevMessages };
+      if (!newMessages[activeChat.username]) {
+        newMessages[activeChat.username] = [];
+      }
+      newMessages[activeChat.username].push(newMessage);
+      return newMessages;
+    });
+
+    setMessageInput("");
+  };
+
+  const selectChat = (user) => {
+    setActiveChat(user);
+  };
+
+  // Format timestamp to readable time
+  const formatTime = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
+  // Determine if a message is from the current user
+  const isOwnMessage = (message) => {
+    return message.sender === user.username;
+  };
+
+  // Get color theme based on index
+  const getThemeColor = (index) => {
+    if (index % 3 === 0)
+      return {
+        primary: "text-[#09D1C7]",
+        bg: "bg-[#09D1C7]",
+        bgLight: "bg-[#09D1C7]/10",
+        bgHover: "hover:bg-[#09D1C7]/20",
+        border: "border-[#09D1C7]/20",
+      };
+    else if (index % 3 === 1)
+      return {
+        primary: "text-[#80EE98]",
+        bg: "bg-[#80EE98]",
+        bgLight: "bg-[#80EE98]/10",
+        bgHover: "hover:bg-[#80EE98]/20",
+        border: "border-[#80EE98]/20",
+      };
+    return {
+      primary: "text-white",
+      bg: "bg-white",
+      bgLight: "bg-white/10",
+      bgHover: "hover:bg-white/20",
+      border: "border-white/10",
+    };
   };
 
   return (
-    <div className="z-50 backdrop-blur-sm  fixed inset-0 bg-black/50 flex items-center justify-center ">
-      <div className="bg-[#1A202C] rounded-lg p-6 w-[900px] max-h-[570px] overflow-y-auto custom-scrollbar mr-10">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-btg">Online Users</h2>
-          <button 
-            onClick={onClose}
-            className="text-white/60 hover:text-white"
-          >
-            ✕
-          </button>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ">
-          {dummyUsers.map((user, index) => (
-            <div
-              key={user.id}
-              className={`
-                rounded-lg p-6 border transition-colors
-                ${
-                  index % 3 === 0
-                    ? "bg-[#1A202C]/50 border-[#09D1C7]/20 hover:bg-[#09D1C7]/5"
-                    : index % 3 === 1
-                    ? "bg-[#1A202C]/50 border-[#80EE98]/20 hover:bg-[#80EE98]/5"
-                    : "bg-[#1A202C]/50 border-white/10 hover:bg-white/5"
-                }
-              `}
+    <div className="z-50 backdrop-blur-sm fixed inset-0 bg-black/50 flex items-center justify-center">
+      <div className="bg-[#1A202C] rounded-lg p-6 w-[1000px] h-[600px] flex overflow-hidden">
+        {/* Sidebar with online users */}
+        <div className="w-1/3 border-r border-white/10 pr-4 overflow-y-auto custom-scrollbar">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-white">Chats</h2>
+            <button
+              onClick={onClose}
+              className="text-white/60 hover:text-white"
             >
-              <div className="flex items-start gap-4">
-                <div className={`w-12 h-12 rounded-full  flex items-center justify-center  ${
-                    index % 3 === 0
-                      ? "bg-[#09D1C7]"
-                      : index % 3 === 1
-                      ? "bg-[#80EE98] text-black"
-                      : "bg-white"
-                  }`}>
-                  <span className={`text-lg ${
-                    index % 3 === 0
-                      ? ""
-                      : index % 3 === 1
-                      ? " text-black"
-                      : "text-black"
-                  } `}>{user.name[0]}</span>
+              ✕
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {onlineUsers.map((user, index) => (
+              <div
+                key={user.socketId}
+                onClick={() => selectChat(user)}
+                className={`
+                  p-3 rounded-lg cursor-pointer transition-colors flex items-center
+                  ${
+                    activeChat?.socketId === user.socketId
+                      ? getThemeColor(index).bgLight
+                      : "hover:bg-white/5"
+                  }
+                  ${getThemeColor(index).border}
+                `}
+              >
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    getThemeColor(index).bg
+                  }`}
+                >
+                  <span
+                    className={`text-md ${
+                      index % 3 === 0 || index % 3 === 1
+                        ? "text-black"
+                        : "text-black"
+                    }`}
+                  >
+                    {user.username[0].toUpperCase()}
+                  </span>
                 </div>
-                
-                <div className="flex-1">
-                  <h3 className={`font-bold mb-1 ${
-                    index % 3 === 0
-                      ? "text-[#09D1C7]"
-                      : index % 3 === 1
-                      ? "text-[#80EE98]"
-                      : "text-white"
-                  }`}>
-                    {user.name}
+                <div className="ml-3">
+                  <h3 className={`font-medium ${getThemeColor(index).primary}`}>
+                    {user.username}
                   </h3>
-                  <p className="text-white/60 text-sm mb-2">{user.expertise}</p>
-                  <p className="text-white/40 text-sm mb-3">{user.location}</p>
-                  
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {user.skills.map((skill, i) => (
-                      <span
-                        key={i}
-                        className={`
-                          px-2 py-1 rounded-full text-xs
-                          ${
-                            index % 3 === 0
-                              ? "bg-[#09D1C7]/10 text-[#09D1C7]"
-                              : index % 3 === 1
-                              ? "bg-[#80EE98]/10 text-[#80EE98]"
-                              : "bg-white/10 text-white"
-                          }
-                        `}
+                  <p className="text-white/60 text-xs">Online</p>
+                </div>
+                <div className="ml-auto">
+                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                </div>
+              </div>
+            ))}
+
+            {onlineUsers.length === 0 && (
+              <div className="text-center py-4 text-white/60">
+                No users online at the moment
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Chat area */}
+        <div className="w-2/3 flex flex-col pl-4">
+          {activeChat ? (
+            <>
+              {/* Chat header */}
+              <div className="py-4 border-b border-white/10 flex items-center">
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    getThemeColor(
+                      onlineUsers.findIndex(
+                        (u) => u.socketId === activeChat.socketId
+                      )
+                    ).bg
+                  }`}
+                >
+                  <span className="text-black">
+                    {activeChat.username[0].toUpperCase()}
+                  </span>
+                </div>
+                <div className="ml-3">
+                  <h3
+                    className={`font-medium ${
+                      getThemeColor(
+                        onlineUsers.findIndex(
+                          (u) => u.socketId === activeChat.socketId
+                        )
+                      ).primary
+                    }`}
+                  >
+                    {activeChat.username}
+                  </h3>
+                  <p className="text-white/60 text-xs">Online</p>
+                </div>
+              </div>
+
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto py-4 custom-scrollbar">
+                <div className="space-y-4">
+                  {messages[activeChat.username]?.map((message, index) => {
+                    const own = isOwnMessage(message);
+                    const themeIndex = own
+                      ? 0
+                      : onlineUsers.findIndex(
+                          (u) => u.username === message.sender
+                        );
+                    const theme = getThemeColor(themeIndex);
+
+                    return (
+                      <div
+                        key={index}
+                        className={`flex ${
+                          own ? "justify-end" : "justify-start"
+                        }`}
                       >
-                        {skill}
-                      </span>
-                    ))}
+                        <div
+                          className={`
+                            max-w-[70%] rounded-lg p-3 
+                            ${own ? theme.bgLight : "bg-white/10"}
+                          `}
+                        >
+                          <p
+                            className={`${own ? theme.primary : "text-white"}`}
+                          >
+                            {message.text}
+                          </p>
+                          <p className="text-white/40 text-xs text-right mt-1">
+                            {formatTime(message.timestamp)}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {!messages[activeChat.username]?.length && (
+                  <div className="text-center py-8 text-white/60">
+                    No messages yet. Start the conversation!
                   </div>
-                  
+                )}
+              </div>
+
+              {/* Message input */}
+              <form
+                onSubmit={handleSendMessage}
+                className="border-t border-white/10 pt-4"
+              >
+                <div className="flex items-center">
+                  <input
+                    type="text"
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    placeholder="Type your message..."
+                    className="flex-1 bg-white/5 rounded-l-lg py-3 px-4 outline-none text-white"
+                  />
                   <button
-                    onClick={() => handleInvite(user.id)}
+                    type="submit"
                     className={`
-                      w-50 pt-1 pb-1 pl-4 pr-4 rounded-md text-sm font-medium transition-colors
-                      ${
-                        index % 3 === 0
-                          ? "bg-[#09D1C7]/10 text-[#09D1C7] hover:bg-[#09D1C7]/20"
-                          : index % 3 === 1
-                          ? "bg-[#80EE98]/10 text-[#80EE98] hover:bg-[#80EE98]/20"
-                          : "bg-white/10 text-white hover:bg-white/20"
-                      }
+                      py-3 px-6 rounded-r-lg font-medium
+                      ${getThemeColor(0).bgLight} ${getThemeColor(0).primary} ${
+                      getThemeColor(0).bgHover
+                    }
                     `}
                   >
-                    Invite
+                    Send
                   </button>
+                </div>
+              </form>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <p className="text-white/60 text-lg mb-4">
+                  Select a chat to start messaging
+                </p>
+                <div
+                  className={`w-16 h-16 rounded-full ${
+                    getThemeColor(0).bgLight
+                  } flex items-center justify-center mx-auto`}
+                >
+                  <span className={`text-3xl ${getThemeColor(0).primary}`}>
+                    💬
+                  </span>
                 </div>
               </div>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>
   );
-}
+};
 
-export default Collaboration;
-
+export default Chat;

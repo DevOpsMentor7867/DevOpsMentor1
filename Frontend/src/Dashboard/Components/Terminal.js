@@ -672,7 +672,7 @@ const {
         setIsLoading(false);
       }
     },
-    [socketId, ansibleSocketId, jenkinsSocketId, kubernetesSocketId, argoSocketId, toolName]
+    [socketId, ansibleSocketId, jenkinsSocketId, kubernetesSocketId, argoSocketId, toolName, labId]
   );
 
   const handleEndLab = () => {

@@ -3,17 +3,12 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, Check } from "lucide-react";
-import { getNames } from "country-list";
-import { useAuthContext } from "../../../API/UseAuthContext";
-
-const countries = getNames();
 
 export default function CheckoutPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { plan } = location.state || { plan: null };
   const [loading, setLoading] = useState(false);
-  const { user } = useAuthContext();
 
   if (!plan) {
     navigate("/dashboard/pricing");
