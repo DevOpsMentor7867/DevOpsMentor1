@@ -1,16 +1,24 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Chat from "./Collaboration" // Import the Chat component
-import { useSocket } from "../../../Context/SocketContext" // Adjust path as needed
+import { useState, useEffect } from "react"
+import Chat from "./Collaboration"; // Import the Chat component
+import { useSocket } from "../../../Context/SocketContext"; // Adjust path as needed
+import { useToast } from "./Toast"; // Import the toast hook
 
 const ChatComponent = () => {
-  const [showChat, setShowChat] = useState(false)
-  const { onlineUsers, isConnected, reconnect, connectionAttempts } = useSocket()
+  const [showChat, setShowChat] = useState(false);
+  const { onlineUsers, isConnected, reconnect, connectionAttempts, newMessage, clearNewMessage  } =
+    useSocket();
+  const { showToast, toastPortal } = useToast();
 
+  // Show toast notification when a new message is received
+  useEffect(() => {
+    if (newMessage && !showChat) {
+      showToast(newMessage.text, newMessage.sender);
+      clearNewMessage();
+    }
+  }, [newMessage, showChat, showToast, clearNewMessage]);
 
-
-  
   return (
     <div className="p-6">
       <div className="max-w-7xl mx-auto">
@@ -23,7 +31,8 @@ const ChatComponent = () => {
                 className="bg-red-500/10 text-red-500 hover:bg-red-500/20 px-4 py-2 rounded-lg flex items-center"
               >
                 <span className="mr-2">🔄</span>
-                Reconnect {connectionAttempts > 0 ? `(${connectionAttempts})` : ""}
+                Reconnect{" "}
+                {connectionAttempts > 0 ? `(${connectionAttempts})` : ""}
               </button>
             )}
             <button
@@ -45,8 +54,14 @@ const ChatComponent = () => {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-white">Online Users</h2>
             <div className="flex items-center">
-              <div className={`w-2 h-2 rounded-full ${isConnected ? "bg-green-500" : "bg-red-500"} mr-2`}></div>
-              <span className="text-sm text-white/60">{isConnected ? "Connected" : "Disconnected"}</span>
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  isConnected ? "bg-green-500" : "bg-red-500"
+                } mr-2`}
+              ></div>
+              <span className="text-sm text-white/60">
+                {isConnected ? "Connected" : "Disconnected"}
+              </span>
             </div>
           </div>
 
@@ -57,8 +72,8 @@ const ChatComponent = () => {
                   index % 3 === 0
                     ? "border-[#09D1C7]/20 text-[#09D1C7]"
                     : index % 3 === 1
-                      ? "border-[#80EE98]/20 text-[#80EE98]"
-                      : "border-white/10 text-white"
+                    ? "border-[#80EE98]/20 text-[#80EE98]"
+                    : "border-white/10 text-white";
 
                 return (
                   <div
@@ -68,10 +83,16 @@ const ChatComponent = () => {
                     <div className="flex items-center">
                       <div
                         className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          index % 3 === 0 ? "bg-[#09D1C7]" : index % 3 === 1 ? "bg-[#80EE98]" : "bg-white"
+                          index % 3 === 0
+                            ? "bg-[#09D1C7]"
+                            : index % 3 === 1
+                            ? "bg-[#80EE98]"
+                            : "bg-white"
                         }`}
                       >
-                        <span className="text-black font-medium">{user.username[0].toUpperCase()}</span>
+                        <span className="text-black font-medium">
+                          {user.username[0].toUpperCase()}
+                        </span>
                       </div>
                       <div className="ml-3">
                         <h3 className="font-medium">{user.username}</h3>
@@ -82,7 +103,7 @@ const ChatComponent = () => {
                       </div>
                     </div>
                   </div>
-                )
+                );
               })}
             </div>
           ) : (
@@ -95,13 +116,18 @@ const ChatComponent = () => {
         </div>
       </div>
       <div className="fixed inset-0 z-[-10]">
-        <img src="/homebgc.jpg" alt="Background" className="w-full h-full object-cover mt-12" />
+        <img
+          src="/homebgc.jpg"
+          alt="Background"
+          className="w-full h-full object-cover mt-12"
+        />
         <div className="absolute inset-0 bg-black/70" />
       </div>
 
       {showChat && <Chat onClose={() => setShowChat(false)} />}
+      {toastPortal}
     </div>
-  )
-}
+  );
+};
 
-export default ChatComponent
+export default ChatComponent;
